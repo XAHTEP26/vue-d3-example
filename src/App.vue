@@ -7383,7 +7383,7 @@ export default {
 
       const vm = this;
       animate({
-        duration: 500,
+        duration: 3000,
         timing: d => d,
         // timing: d => d ** 2,
         draw(progress) {

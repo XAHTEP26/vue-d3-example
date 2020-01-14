@@ -75,18 +75,32 @@ export default ({
         {...data}
       >
         <path class="domain" stroke="currentColor" d={d}/>
-        {values.map((value, index) => (
-          <g
-            key={index}
-            class="tick"
-            opacity="1"
-            transform={transform(position(value))}
-          >
-            <line {...{ attrs: lineAttributes }}/>
-            <text {...{ attrs: textAttributes }}>{format(value)}</text>
-          </g>
-        ))}
+        <transition-group name="ticks" tag="g">
+          {values.map((value, index) => (
+            <g
+              key={index}
+              class="tick"
+              opacity="1"
+              transform={transform(position(value))}
+            >
+              <line {...{ attrs: lineAttributes }}/>
+              <text {...{ attrs: textAttributes }}>{format(value)}</text>
+            </g>
+          ))}
+        </transition-group>
       </g>
   );
 };
 </script>
+
+<style>
+.ticks-enter-active,
+.ticks-leave-active {
+  transition: opacity .5s;
+}
+
+.ticks-enter,
+.ticks-leave-to {
+  opacity: 0;
+}
+</style>
