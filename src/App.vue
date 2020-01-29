@@ -3,29 +3,30 @@
     <div>
       <button @click="update(data1)">Dataset 1</button>
       <button @click="update(data2)">Dataset 2</button>
+      <button @click="switchAxis()">Switch</button>
     </div>
 
     <svg :width="width" :height="height">
       <d3-axis
         v-if="scaleX"
-        orient="bottom"
+        :orient="orientX"
         :scale="scaleX"
         :transform="`translate(${margin.left},${height - margin.bottom})`"
-      ></d3-axis>
+      />
       <d3-axis
         v-if="scaleY"
-        orient="left"
+        :orient="orientY"
         :scale="scaleY"
         :transform="`translate(${margin.left},${margin.top})`"
-      ></d3-axis>
-      <d3-transition :data="path" :duration="300" v-slot:default="tweenedPath">
+      />
+      <d3-transition :data="path" :duration="3000" v-slot:default="tweenedPath">
         <path
           fill="none"
           stroke="steelblue"
           stroke-width="2.5"
           :d="tweenedPath"
           :transform="`translate(${margin.left},${margin.top})`"
-        ></path>
+        />
       </d3-transition>
     </svg>
   </div>
@@ -51,6 +52,8 @@ export default {
         bottom: 30,
         left: 50,
       },
+      orientX: 'bottom',
+      orientY: 'left',
       width: 460,
       height: 400,
       data: [],
@@ -83,6 +86,9 @@ export default {
   methods: {
     update(data) {
       this.data = data;
+    },
+    switchAxis() {
+      [this.orientX, this.orientY] = [this.orientY, this.orientX];
     },
   },
   mounted() {

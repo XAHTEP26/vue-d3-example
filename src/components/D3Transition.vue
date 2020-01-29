@@ -1,28 +1,5 @@
 <script>
-/* import {
-    scaleLinear, line, max, interpolate,
-  } from 'd3'; */
-
 import * as d3 from 'd3';
-
-function animate({ timing, draw, duration }) {
-  const start = performance.now();
-
-  requestAnimationFrame(function drawFrame(time) {
-    // timeFraction изменяется от 0 до 1
-    let timeFraction = (time - start) / duration;
-    if (timeFraction > 1) timeFraction = 1;
-
-    // вычисление текущего состояния анимации
-    const progress = timing(timeFraction);
-
-    draw(progress); // отрисовать её
-
-    if (timeFraction < 1) {
-      requestAnimationFrame(drawFrame);
-    }
-  });
-}
 
 export default {
   props: {
@@ -31,7 +8,15 @@ export default {
     },
     duration: {
       type: Number,
+      default: 250,
+    },
+    delay: {
+      type: Number,
       default: 0,
+    },
+    ease: {
+      type: Function,
+      default: d3.easeCubic,
     },
   },
   data() {
@@ -41,20 +26,22 @@ export default {
   },
   watch: {
     data: {
-      handler(newData, oldData) {
+      handler(newData) {
         if (!this.duration) {
           this.tweenedData = newData;
           return;
         }
 
-        const interpolator = d3.interpolate(oldData, newData);
-        animate({
-          duration: this.duration,
-          timing: d => d,
-          draw: (progress) => {
-            this.tweenedData = interpolator(progress);
-          },
-        });
+        const interpolator = d3.interpolate(this.tweenedData, newData);
+
+        const timer = d3.timer((elapsed) => {
+          let timeFraction = elapsed / this.duration;
+          if (timeFraction < 0) timeFraction = 0;
+          if (timeFraction > 1) timeFraction = 1;
+          const progress = this.ease(timeFraction);
+          this.$set(this.$data, 'tweenedData', interpolator(progress));
+          if (progress === 1) timer.stop();
+        }, this.delay);
       },
       immediate: true,
     },

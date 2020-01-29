@@ -1,4 +1,29 @@
+<template>
+  <g
+    fill="none"
+    font-size="10"
+    font-family="sans-serif"
+    :text-anchor="tickTextAnchor"
+  >
+    <d3-transition :data="d" :duration="3000" v-slot:default="tweenedD">
+      <path class="domain" stroke="currentColor" :d="tweenedD"></path>
+    </d3-transition>
+    <g
+      v-for="value in values"
+      :key="value"
+      class="tick"
+      opacity="1"
+      :transform="transform(position(value))"
+    >
+      <line stroke="currentColor" v-bind="{ [`${x}2`]: k * tickSizeInner }"></line>
+      <text fill="currentColor" :dy="tickDeltaY" v-bind="{ [x]: k * spacing }">{{ format(value) }}</text>
+    </g>
+  </g>
+</template>
+
 <script>
+import D3Transition from './D3Transition.vue';
+
 const top = 'top';
 const bottom = 'bottom';
 const left = 'left';
@@ -26,15 +51,10 @@ function center(scale) {
   return d => +scale(d) + offset;
 }
 
-const ORIENTATIONS = {
-  TOP: 'top',
-  BOTTOM: 'bottom',
-  LEFT: 'left',
-  RIGHT: 'right',
-};
-
 export default {
-  functional: true,
+  components: {
+    D3Transition,
+  },
   props: {
     scale: {
       type: Function,
@@ -43,7 +63,7 @@ export default {
     orient: {
       type: String,
       validator(value) {
-        return Object.values(ORIENTATIONS).includes(value);
+        return [top, bottom, left, right].includes(value);
       },
     },
     tickArguments: {
@@ -71,81 +91,48 @@ export default {
       default: 3,
     },
   },
-  render(h, {
-    data,
-    props: {
-      scale,
-      orient,
-      tickArguments,
-      tickValues,
-      tickFormat,
-      tickSizeInner,
-      tickSizeOuter,
-      tickPadding,
+  computed: {
+    k() {
+      return this.orient === top || this.orient === left ? -1 : 1;
     },
-  }) {
-    const k = orient === top || orient === left ? -1 : 1;
-    const x = orient === left || orient === right ? 'x' : 'y';
-    const transform = orient === top || orient === bottom ? translateX : translateY;
-
-    const values = tickValues === null ? (scale.ticks ? scale.ticks(...tickArguments) : scale.domain()) : tickValues;
-    const format = tickFormat === null ? (scale.tickFormat ? scale.tickFormat(...tickArguments) : identity) : tickFormat;
-    const spacing = Math.max(tickSizeInner, 0) + tickPadding;
-    const range = scale.range();
-    const range0 = +range[0] + 0.5;
-    const range1 = +range[range.length - 1] + 0.5;
-    const position = (scale.bandwidth ? center : number)(scale.copy());
-
-    const tickTextAnchor = orient === left ? 'end' : 'middle';
-    const d = orient === left || orient === right
-      ? (tickSizeOuter ? `M${k * tickSizeOuter},${range0}H0.5V${range1}H${k * tickSizeOuter}` : `M0.5,${range0}V${range1}`)
-      : (tickSizeOuter ? `M${range0},${k * tickSizeOuter}V0.5H${range1}V${k * tickSizeOuter}` : `M${range0},0.5H${range1}`);
-    const tickDeltaY = orient === top ? '0em' : orient === bottom ? '0.71em' : '0.32em';
-    const lineAttributes = {
-      stroke: 'currentColor',
-      [`${x}2`]: k * tickSizeInner,
-    };
-    const textAttributes = {
-      fill: 'currentColor',
-      dy: tickDeltaY,
-      [x]: k * spacing,
-    };
-    return (
-    <g
-      fill="none"
-      font-size="10"
-      font-family="sans-serif"
-      text-anchor={tickTextAnchor}
-      {...data}
-    >
-      <path class="domain" stroke="currentColor" d={d}/>
-      <transition-group name="ticks" tag="g">
-        {values.map((value, index) => (
-          <g
-            key={index}
-            class="tick"
-            opacity="1"
-            transform={transform(position(value))}
-          >
-            <line {...{ attrs: lineAttributes }}/>
-            <text {...{ attrs: textAttributes }}>{format(value)}</text>
-          </g>
-        ))}
-      </transition-group>
-    </g>
-    );
+    x() {
+      return this.orient === left || this.orient === right ? 'x' : 'y';
+    },
+    transform() {
+      return this.orient === top || this.orient === bottom ? translateX : translateY;
+    },
+    values() {
+      return this.tickValues === null ? (this.scale.ticks ? this.scale.ticks(...this.tickArguments) : this.scale.domain()) : this.tickValues;
+    },
+    format() {
+      return this.tickFormat === null ? (this.scale.tickFormat ? this.scale.tickFormat(...this.tickArguments) : identity) : this.tickFormat;
+    },
+    spacing() {
+      return Math.max(this.tickSizeInner, 0) + this.tickPadding;
+    },
+    position() {
+      return (this.scale.bandwidth ? center : number)(this.scale.copy());
+    },
+    tickTextAnchor() {
+      return this.orient === left ? 'end' : 'middle';
+    },
+    d() {
+      const range = this.scale.range();
+      const range0 = +range[0] + 0.5;
+      const range1 = +range[range.length - 1] + 0.5;
+      return this.orient === left || this.orient === right
+        ? (this.tickSizeOuter ? `M${this.k * this.tickSizeOuter},${range0}H0.5V${range1}H${this.k * this.tickSizeOuter}` : `M0.5,${range0}V${range1}`)
+        : (this.tickSizeOuter ? `M${range0},${this.k * this.tickSizeOuter}V0.5H${range1}V${this.k * this.tickSizeOuter}` : `M${range0},0.5H${range1}`);
+    },
+    tickDeltaY() {
+      return this.orient === top ? '0em' : this.orient === bottom ? '0.71em' : '0.32em';
+    },
+  },
+  watch: {
+    scale: {
+      handler() {},
+      immediate: true,
+    },
   },
 };
 </script>
-
-<style>
-.ticks-enter-active,
-.ticks-leave-active {
-  transition: opacity .5s;
-}
-
-.ticks-enter,
-.ticks-leave-to {
-  opacity: 0;
-}
-</style>
