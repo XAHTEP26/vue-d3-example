@@ -5,9 +5,7 @@
     font-family="sans-serif"
     :text-anchor="tickTextAnchor"
   >
-    <d3-transition :data="d" :duration="3000" v-slot:default="tweenedD">
-      <path class="domain" stroke="currentColor" :d="tweenedD"></path>
-    </d3-transition>
+    <path class="domain" stroke="currentColor" :d="d"></path>
     <g
       v-for="value in values"
       :key="value"
@@ -22,8 +20,6 @@
 </template>
 
 <script>
-import D3Transition from './D3Transition.vue';
-
 const top = 'top';
 const bottom = 'bottom';
 const left = 'left';
@@ -52,9 +48,6 @@ function center(scale) {
 }
 
 export default {
-  components: {
-    D3Transition,
-  },
   props: {
     scale: {
       type: Function,
@@ -126,12 +119,6 @@ export default {
     },
     tickDeltaY() {
       return this.orient === top ? '0em' : this.orient === bottom ? '0.71em' : '0.32em';
-    },
-  },
-  watch: {
-    scale: {
-      handler() {},
-      immediate: true,
     },
   },
 };

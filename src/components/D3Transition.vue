@@ -21,25 +21,25 @@ export default {
   },
   data() {
     return {
-      tweenedData: null,
+      interimData: null,
     };
   },
   watch: {
     data: {
       handler(newData) {
         if (!this.duration) {
-          this.tweenedData = newData;
+          this.interimData = newData;
           return;
         }
 
-        const interpolator = d3.interpolate(this.tweenedData, newData);
+        const interpolator = d3.interpolate(this.interimData, newData);
 
         const timer = d3.timer((elapsed) => {
           let timeFraction = elapsed / this.duration;
           if (timeFraction < 0) timeFraction = 0;
           if (timeFraction > 1) timeFraction = 1;
           const progress = this.ease(timeFraction);
-          this.$set(this.$data, 'tweenedData', interpolator(progress));
+          this.$set(this.$data, 'interimData', interpolator(progress));
           if (progress === 1) timer.stop();
         }, this.delay);
       },
@@ -47,7 +47,7 @@ export default {
     },
   },
   render() {
-    return this.$scopedSlots.default(this.tweenedData);
+    return this.$scopedSlots.default(this.interimData);
   },
 };
 </script>

@@ -3,28 +3,25 @@
     <div>
       <button @click="update(data1)">Dataset 1</button>
       <button @click="update(data2)">Dataset 2</button>
-      <button @click="switchAxis()">Switch</button>
     </div>
 
     <svg :width="width" :height="height">
-      <d3-axis
-        v-if="scaleX"
-        :orient="orientX"
-        :scale="scaleX"
+      <d3-axis-bottom
+        :range="rangeX"
+        :ticks="ticksX"
         :transform="`translate(${margin.left},${height - margin.bottom})`"
       />
-      <d3-axis
-        v-if="scaleY"
-        :orient="orientY"
-        :scale="scaleY"
+      <d3-axis-left
+        :range="rangeY"
+        :ticks="ticksY"
         :transform="`translate(${margin.left},${margin.top})`"
       />
-      <d3-transition :data="path" :duration="3000" v-slot:default="tweenedPath">
+      <d3-transition :data="path" :duration="500" v-slot:default="interimPath">
         <path
           fill="none"
           stroke="steelblue"
           stroke-width="2.5"
-          :d="tweenedPath"
+          :d="interimPath"
           :transform="`translate(${margin.left},${margin.top})`"
         />
       </d3-transition>
@@ -36,12 +33,14 @@
 import {
   scaleLinear, line, max,
 } from 'd3';
-import D3Axis from './components/D3Axis.vue';
+import D3AxisBottom from './components/D3AxisBottom.vue';
+import D3AxisLeft from './components/D3AxisLeft.vue';
 import D3Transition from './components/D3Transition.vue';
 
 export default {
   components: {
-    D3Axis,
+    D3AxisBottom,
+    D3AxisLeft,
     D3Transition,
   },
   data() {
@@ -52,8 +51,6 @@ export default {
         bottom: 30,
         left: 50,
       },
-      orientX: 'bottom',
-      orientY: 'left',
       width: 460,
       height: 400,
       data: [],
@@ -66,15 +63,35 @@ export default {
     };
   },
   computed: {
+    rangeX() {
+      return [0, this.width - this.margin.left - this.margin.right];
+    },
     scaleX() {
       return scaleLinear()
-        .range([0, this.width - this.margin.left - this.margin.right])
+        .range(this.rangeX)
         .domain([0, max(this.data, d => d.ser1)]);
+    },
+    ticksX() {
+      if (!this.scaleX) return [];
+      return this.scaleX.ticks().map(tick => ({
+        name: tick,
+        position: this.scaleX(tick),
+      }));
+    },
+    rangeY() {
+      return [this.height - this.margin.top - this.margin.bottom, 0];
     },
     scaleY() {
       return scaleLinear()
-        .range([this.height - this.margin.top - this.margin.bottom, 0])
+        .range(this.rangeY)
         .domain([0, max(this.data, d => d.ser2)]);
+    },
+    ticksY() {
+      if (!this.scaleY) return [];
+      return this.scaleY.ticks().map(tick => ({
+        name: tick,
+        position: this.scaleY(tick),
+      }));
     },
     path() {
       const lineBuilder = line()
@@ -86,9 +103,6 @@ export default {
   methods: {
     update(data) {
       this.data = data;
-    },
-    switchAxis() {
-      [this.orientX, this.orientY] = [this.orientY, this.orientX];
     },
   },
   mounted() {
