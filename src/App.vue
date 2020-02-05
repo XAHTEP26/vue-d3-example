@@ -8,23 +8,21 @@
     <svg :width="width" :height="height">
       <d3-axis-bottom
         :range="rangeX"
-        :ticks="ticksX"
+        :ticks="tweenedTicksX"
         :transform="`translate(${margin.left},${height - margin.bottom})`"
       />
       <d3-axis-left
         :range="rangeY"
-        :ticks="ticksY"
+        :ticks="tweenedTicksY"
         :transform="`translate(${margin.left},${margin.top})`"
       />
-      <d3-transition :data="path" :duration="500" v-slot:default="interimPath">
-        <path
-          fill="none"
-          stroke="steelblue"
-          stroke-width="2.5"
-          :d="interimPath"
-          :transform="`translate(${margin.left},${margin.top})`"
-        />
-      </d3-transition>
+      <path
+        fill="none"
+        stroke="steelblue"
+        stroke-width="2.5"
+        :d="tweenedPath"
+        :transform="`translate(${margin.left},${margin.top})`"
+      />
     </svg>
   </div>
 </template>
@@ -32,16 +30,42 @@
 <script>
 import {
   scaleLinear, line, max,
+  interpolate,
+  timer,
+  easeCubic,
 } from 'd3';
 import D3AxisBottom from './components/D3AxisBottom.vue';
 import D3AxisLeft from './components/D3AxisLeft.vue';
-import D3Transition from './components/D3Transition.vue';
+
+function animate(from, to, {
+  duration = 250,
+  ease = easeCubic,
+  delay = 0,
+}) {
+  const animatedProps = Object.keys(to);
+  const animations = animatedProps.map(prop => ({
+    interpolator: interpolate(from[prop], to[prop]),
+    prop,
+  }));
+
+  const theTimer = timer((elapsed) => {
+    let timeFraction = elapsed / duration;
+    if (timeFraction < 0) timeFraction = 0;
+    if (timeFraction > 1) timeFraction = 1;
+    const progress = ease(timeFraction);
+    animations.forEach((animation) => {
+      /* eslint-disable */
+      from[animation.prop] = animation.interpolator(progress);
+      /* eslint-enable */
+    });
+    if (progress === 1) theTimer.stop();
+  }, delay);
+}
 
 export default {
   components: {
     D3AxisBottom,
     D3AxisLeft,
-    D3Transition,
   },
   data() {
     return {
@@ -59,7 +83,10 @@ export default {
         { ser1: 2, ser2: 16 },
         { ser1: 3, ser2: 8 },
       ],
-      data2: [{ ser1: 1, ser2: 7 }, { ser1: 4, ser2: 1 }, { ser1: 6, ser2: 8 }],
+      data2: [{ ser1: 1, ser2: 7 }, { ser1: 4, ser2: 1 }, { ser1: 6, ser2: 9 }],
+      tweenedPath: '',
+      tweenedTicksX: [],
+      tweenedTicksY: [],
     };
   },
   computed: {
@@ -98,6 +125,14 @@ export default {
         .x(d => this.scaleX(d.ser1))
         .y(d => this.scaleY(d.ser2));
       return lineBuilder(this.data);
+    },
+  },
+  watch: {
+    data: {
+      handler() {
+        animate(this.$data, { tweenedPath: this.path, tweenedTicksX: this.ticksX, tweenedTicksY: this.ticksY }, { duration: 500 });
+      },
+      immediate: true,
     },
   },
   methods: {

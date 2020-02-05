@@ -12,7 +12,7 @@
       :transform="transform(tick.position)"
     >
       <line stroke="currentColor" x2="-6"></line>
-      <text fill="currentColor" dy="0.32em" x="-9">{{ tick.name }}</text>
+      <text fill="currentColor" dy="0.32em" x="-9">{{ +tick.name.toFixed(1) }}</text>
     </g>
   </g>
 </template>
