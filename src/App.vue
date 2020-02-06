@@ -8,12 +8,12 @@
     <svg :width="width" :height="height">
       <d3-axis-bottom
         :range="rangeX"
-        :ticks="tweenedTicksX"
+        :ticks="ticksX"
         :transform="`translate(${margin.left},${height - margin.bottom})`"
       />
       <d3-axis-left
         :range="rangeY"
-        :ticks="tweenedTicksY"
+        :ticks="ticksY"
         :transform="`translate(${margin.left},${margin.top})`"
       />
       <path
@@ -30,34 +30,21 @@
 <script>
 import {
   scaleLinear, line, max,
-  interpolate,
+  // interpolate,
   timer,
   easeCubic,
 } from 'd3';
+import { interpolatePath } from 'd3-interpolate-path';
 import D3AxisBottom from './components/D3AxisBottom.vue';
 import D3AxisLeft from './components/D3AxisLeft.vue';
 
-function animate(from, to, {
-  duration = 250,
-  ease = easeCubic,
-  delay = 0,
-}) {
-  const animatedProps = Object.keys(to);
-  const animations = animatedProps.map(prop => ({
-    interpolator: interpolate(from[prop], to[prop]),
-    prop,
-  }));
-
+function animate(from, to, onTick, duration = 250, ease = easeCubic, delay = 0) {
+  const interpolator = interpolatePath(from, to);
   const theTimer = timer((elapsed) => {
-    let timeFraction = elapsed / duration;
-    if (timeFraction < 0) timeFraction = 0;
-    if (timeFraction > 1) timeFraction = 1;
+    const timeFraction = Math.min(elapsed / duration, 1);
     const progress = ease(timeFraction);
-    animations.forEach((animation) => {
-      /* eslint-disable */
-      from[animation.prop] = animation.interpolator(progress);
-      /* eslint-enable */
-    });
+    console.log(timeFraction);
+    onTick(interpolator(progress));
     if (progress === 1) theTimer.stop();
   }, delay);
 }
@@ -83,10 +70,13 @@ export default {
         { ser1: 2, ser2: 16 },
         { ser1: 3, ser2: 8 },
       ],
-      data2: [{ ser1: 1, ser2: 7 }, { ser1: 4, ser2: 1 }, { ser1: 6, ser2: 9 }],
+      data2: [
+        { ser1: 10, ser2: 71 },
+        { ser1: 46, ser2: 13 },
+        { ser1: 61, ser2: 96 },
+        { ser1: 81, ser2: 54 },
+      ],
       tweenedPath: '',
-      tweenedTicksX: [],
-      tweenedTicksY: [],
     };
   },
   computed: {
@@ -130,7 +120,7 @@ export default {
   watch: {
     data: {
       handler() {
-        animate(this.$data, { tweenedPath: this.path, tweenedTicksX: this.ticksX, tweenedTicksY: this.ticksY }, { duration: 500 });
+        animate(this.$data.tweenedPath, this.path, (path) => { this.$data.tweenedPath = path; }, 500);
       },
       immediate: true,
     },
