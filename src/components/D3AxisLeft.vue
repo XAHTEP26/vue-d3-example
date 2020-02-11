@@ -6,38 +6,54 @@
     text-anchor="end"
   >
     <path stroke="currentColor" :d="d"></path>
-    <g
-      v-for="tick in ticks"
-      :key="tick.position"
-      :transform="transform(tick.position)"
-    >
-      <line stroke="currentColor" x2="-6"></line>
-      <text fill="currentColor" dy="0.32em" x="-9">{{ tick.name }}</text>
-    </g>
+    <transition-group name="tick" tag="g">
+      <g
+        class="tick"
+        v-for="tick in ticks"
+        :key="tick"
+        :transform="transform(tick)"
+      >
+        <line stroke="currentColor" x2="-6"></line>
+        <text fill="currentColor" dy="0.32em" x="-9">{{ tick }}</text>
+      </g>
+    </transition-group>
   </g>
 </template>
 
 <script>
 export default {
   props: {
-    range: {
-      type: Array,
+    scale: {
+      type: Function,
       required: true,
-    },
-    ticks: {
-      type: Array,
-      default: () => [],
     },
   },
   computed: {
+    range() {
+      return this.scale.range();
+    },
+    ticks() {
+      return this.scale.ticks();
+    },
     d() {
       return `M-6,${this.range[0] + 0.5}H0.5V${this.range[1] + 0.5}H-6`;
     },
   },
   methods: {
-    transform(position) {
-      return `translate(0,${position + 0.5})`;
+    transform(tick) {
+      return `translate(0,${this.scale(tick) + 0.5})`;
     },
   },
 };
 </script>
+
+<style scoped lang="scss">
+.tick {
+  transition: .25s;
+
+  &-enter,
+  &-leave-to {
+    opacity: 0;
+  }
+}
+</style>
