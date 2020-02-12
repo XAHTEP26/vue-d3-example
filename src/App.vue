@@ -1,8 +1,7 @@
 <template>
   <div id="app">
     <div>
-      <button @click="update(data1)">Dataset 1</button>
-      <button @click="update(data2)">Dataset 2</button>
+      <button @click="update()">Update</button>
     </div>
 
     <svg :width="width" :height="height">
@@ -58,25 +57,9 @@ export default {
         bottom: 30,
         left: 50,
       },
-      width: 460,
+      width: 1900,
       height: 400,
       data: [],
-      data1: [
-        { ser1: 1, ser2: 6 },
-        { ser1: 2, ser2: 10 },
-        { ser1: 3, ser2: 8 },
-        { ser1: 4, ser2: 9 },
-        { ser1: 5, ser2: 8 },
-      ],
-      data2: [
-        { ser1: 3, ser2: 8 },
-        { ser1: 3.5, ser2: 8.7 },
-        { ser1: 4, ser2: 9 },
-        { ser1: 4.5, ser2: 10.3 },
-        { ser1: 5, ser2: 12 },
-        { ser1: 5.5, ser2: 14 },
-        { ser1: 6, ser2: 17 },
-      ],
       tweenedPath: '',
     };
   },
@@ -84,17 +67,17 @@ export default {
     scaleX() {
       return d3.scaleLinear()
         .range([0, this.width - this.margin.left - this.margin.right])
-        .domain(d3.extent(this.data, d => d.ser1));
+        .domain(d3.extent(this.data, d => d.x));
     },
     scaleY() {
       return d3.scaleLinear()
         .range([this.height - this.margin.top - this.margin.bottom, 0])
-        .domain(d3.extent(this.data, d => d.ser2));
+        .domain(d3.extent(this.data, d => d.y));
     },
     path() {
       const lineBuilder = d3.line()
-        .x(d => this.scaleX(d.ser1))
-        .y(d => this.scaleY(d.ser2));
+        .x(d => this.scaleX(d.x))
+        .y(d => this.scaleY(d.y));
       return lineBuilder(this.data);
     },
   },
@@ -112,12 +95,15 @@ export default {
     },
   },
   methods: {
-    update(data) {
-      this.data = data;
+    update() {
+      this.data = new Array(500).fill(0).map((_, i) => ({
+        x: i,
+        y: Math.random() * 10,
+      }));
     },
   },
   mounted() {
-    this.update(this.data1);
+    this.update();
   },
 };
 </script>
