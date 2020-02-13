@@ -15,7 +15,7 @@
       />
       <path
         fill="none"
-        stroke="steelblue"
+        stroke="red"
         stroke-width="2.5"
         :d="tweenedPath"
         :transform="`translate(${margin.left},${margin.top})`"
@@ -26,9 +26,20 @@
 
 <script>
 import * as d3 from 'd3';
-import { interpolatePath } from 'd3-interpolate-path';
 import D3AxisBottom from './components/D3AxisBottom.vue';
 import D3AxisLeft from './components/D3AxisLeft.vue';
+
+function generateFakeData() {
+  let prev = 100;
+  return new Array(200).fill(0).map((_, i) => {
+    const y = prev + Math.random() * (Math.random() > 0.5 ? 1 : -1);
+    prev = y;
+    return {
+      x: i,
+      y,
+    };
+  });
+}
 
 function onFrame({
   draw,
@@ -75,16 +86,13 @@ export default {
         .domain(d3.extent(this.data, d => d.y));
     },
     path() {
-      const lineBuilder = d3.line()
-        .x(d => this.scaleX(d.x))
-        .y(d => this.scaleY(d.y));
-      return lineBuilder(this.data);
+      return this.lineBuilder(this.data);
     },
   },
   watch: {
     path: {
       handler(newPath) {
-        const interpolator = interpolatePath(this.$data.tweenedPath, newPath);
+        const interpolator = d3.interpolate(this.$data.tweenedPath, newPath);
         onFrame({
           draw: (progress) => {
             this.$data.tweenedPath = interpolator(progress);
@@ -96,11 +104,13 @@ export default {
   },
   methods: {
     update() {
-      this.data = new Array(500).fill(0).map((_, i) => ({
-        x: i,
-        y: Math.random() * 10,
-      }));
+      this.data = generateFakeData();
     },
+  },
+  beforeCreate() {
+    this.lineBuilder = d3.line()
+      .x(d => this.scaleX(d.x))
+      .y(d => this.scaleY(d.y));
   },
   mounted() {
     this.update();
